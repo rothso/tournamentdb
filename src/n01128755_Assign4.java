@@ -1,4 +1,6 @@
+import java.io.Closeable;
 import java.io.File;
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
@@ -7,47 +9,66 @@ import java.sql.Statement;
 import java.util.Collections;
 import java.util.Scanner;
 
+/**
+ * @author Rothanak So
+ */
 public class n01128755_Assign4 {
+
+  public static void main(String[] args) throws Exception {
+    // Create the database
+    SportDatabase db = new SportDatabase();
+
+    // Insert data into the database
+    db.createSchema();
+    db.insert("players", "players.csv");
+    db.insert("teams", "teams.csv");
+    db.insert("members", "members.csv");
+    db.insert("tournaments", "tournaments.csv");
+    db.insert("matches", "matches_v2.csv");
+    db.insert("earnings", "earnings.csv");
+
+    // Query the database
+    int option;
+    Scanner input = new Scanner(System.in);
+    showMenu();
+    while ((option = input.nextInt()) != 0) {
+      if (option >= 1 && option <= 7) {
+        System.out.println("You chose " + option);
+      } else {
+        System.out.println("Invalid option, please try again.");
+      }
+      showMenu();
+    }
+  }
+
+  private static void showMenu() {
+    System.out.println("[ Menu ]\n" +
+        "0: Quit\n" +
+        "1: Get players by month and year of birth\n" +
+        "2: Add a player to a team\n" +
+        "3: Get players by nationality and year of birth\n" +
+        "4: Get players who have attained a triple crown\n" +
+        "5: Get former members of the team \"Root Gaming\"\n" +
+        "6: Get the players with the highest P vs T winrates\n" +
+        "7: Get teams founded before 2011 that are still active");
+  }
+}
+
+class SportDatabase implements Closeable {
   private static final String DB_NAME = "PlayerDB_Assign4";
   private static final String DB_URL = "jdbc:mysql://localhost:3306/?useSSL=false";
   private static final String USER = "root";
   private static final String PASS = "root";
 
-  public static void main(String[] args) {
-    try (
-        Connection conn = DriverManager.getConnection(DB_URL, USER, PASS);
-        Statement stmt = conn.createStatement()
-    ) {
-      // Create the database
-      stmt.execute("CREATE DATABASE IF NOT EXISTS " + DB_NAME);
-
-      // Use the database
-      stmt.execute("USE " + DB_NAME);
-
-      SportDatabase db = new SportDatabase(conn, stmt);
-      db.createSchema();
-      db.insert("players", "players.csv");
-      db.insert("teams", "teams.csv");
-      db.insert("members", "members.csv");
-      db.insert("tournaments", "tournaments.csv");
-      db.insert("matches", "matches_v2.csv");
-      db.insert("earnings", "earnings.csv");
-
-      // Drop the database
-      //stmt.execute("DROP DATABASE " + DB_NAME);
-    } catch (Exception e) {
-      e.printStackTrace();
-    }
-  }
-}
-
-class SportDatabase {
   private final Connection conn;
   private final Statement stmt;
 
-  SportDatabase(Connection conn, Statement stmt) {
-    this.conn = conn;
-    this.stmt = stmt;
+  SportDatabase() throws SQLException {
+    conn = DriverManager.getConnection(DB_URL, USER, PASS);
+
+    stmt = conn.createStatement();
+    stmt.execute("CREATE DATABASE IF NOT EXISTS " + DB_NAME);
+    stmt.execute("USE " + DB_NAME);
   }
 
   void createSchema() throws SQLException {
@@ -145,5 +166,14 @@ class SportDatabase {
     // Clean up
     insert.close();
     conn.setAutoCommit(true);
+  }
+
+  @Override
+  public void close() throws IOException {
+    try {
+      stmt.execute("DROP DATABASE " + DB_NAME);
+    } catch (SQLException e) {
+      throw new IOException(e);
+    }
   }
 }
