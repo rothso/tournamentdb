@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Collections;
@@ -32,10 +33,23 @@ public class n01128755_Assign4 {
     Scanner input = new Scanner(System.in);
     showMenu();
     while ((option = input.nextInt()) != 0) {
-      if (option >= 1 && option <= 7) {
-        System.out.println("You chose " + option);
-      } else {
-        System.out.println("Invalid option, please try again.");
+      switch (option) {
+        case 1:
+          System.out.print("Enter the birth year: ");
+          int year = input.nextInt();
+          System.out.print("Enter the birth month: ");
+          int month = input.nextInt();
+          db.query1(year, month);
+          break;
+        case 2:
+          break;
+        case 3: break;
+        case 4: break;
+        case 5: break;
+        case 6: break;
+        case 7: break;
+        default:
+          System.out.println("Invalid option, please try again.");
       }
       showMenu();
     }
@@ -166,6 +180,22 @@ class SportDatabase implements Closeable {
     // Clean up
     insert.close();
     conn.setAutoCommit(true);
+  }
+
+  void query1(int birthYear, int birthMonth) throws SQLException {
+    ResultSet rs = stmt.executeQuery(
+        "SELECT real_name, tag, nationality\n" +
+            "FROM players\n" +
+            "WHERE YEAR(birthday) = " + birthYear + "\n" +
+            "  AND MONTH(birthday) = " + birthMonth);
+    int i = 1;
+    System.out.printf("    %-20s %-20s %-20s\n", "Real Name", "Tag", "Nationality");
+    while (rs.next()) {
+      System.out.printf("%-3d %-20s %-20s %-20s\n", i++,
+          rs.getString("real_name"),
+          rs.getString("tag"),
+          rs.getString("nationality"));
+    }
   }
 
   @Override
