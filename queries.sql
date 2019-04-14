@@ -8,17 +8,20 @@ WHERE YEAR(birthday) = 1990
 
 -- 2
 UPDATE members
-SET end_date = NOW()
-where player = 1
-  AND team != 12
+SET end_date = CURRENT_DATE()
+where player = 6
+  AND team != 7
   AND end_date IS NULL;
 
 INSERT INTO members
-SELECT 1, 12, NOW(), NULL
+SELECT 6, 8, CURRENT_DATE(), NULL
 FROM members
-WHERE player = 1
-  AND team = 12
-  AND end_date IS NULL;
+WHERE NOT EXISTS(SELECT *
+                 FROM members
+                 WHERE player = 6
+                   AND TEAM = 8
+                   AND end_date IS NULL)
+LIMIT 1;
 
 -- 3
 SELECT real_name, birthday
@@ -64,7 +67,8 @@ FROM (SELECT playerA, playerB, scoreA, scoreB
          INNER JOIN players p1 ON m.playerA = p1.player_id AND p1.game_race = 'P'
          INNER JOIN players p2 ON m.playerB = p2.player_id AND p2.game_race = 'T'
 GROUP BY playerA
-HAVING COUNT(*) >= 10 AND winrate > 65
+HAVING COUNT(*) >= 10
+   AND winrate > 65
 ORDER BY winrate DESC;
 
 -- 7 (good)

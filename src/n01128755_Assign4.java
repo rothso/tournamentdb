@@ -42,12 +42,22 @@ public class n01128755_Assign4 {
           db.query1(year, month);
           break;
         case 2:
+          System.out.print("Enter the player id: ");
+          int player = input.nextInt();
+          System.out.print("Enter the team id: ");
+          int team = input.nextInt();
+          db.query2(player, team);
           break;
-        case 3: break;
-        case 4: break;
-        case 5: break;
-        case 6: break;
-        case 7: break;
+        case 3:
+          break;
+        case 4:
+          break;
+        case 5:
+          break;
+        case 6:
+          break;
+        case 7:
+          break;
         default:
           System.out.println("Invalid option, please try again.");
       }
@@ -56,7 +66,7 @@ public class n01128755_Assign4 {
   }
 
   private static void showMenu() {
-    System.out.println("[ Menu ]\n" +
+    System.out.println("\n" +
         "0: Quit\n" +
         "1: Get players by month and year of birth\n" +
         "2: Add a player to a team\n" +
@@ -64,7 +74,7 @@ public class n01128755_Assign4 {
         "4: Get players who have attained a triple crown\n" +
         "5: Get former members of the team \"Root Gaming\"\n" +
         "6: Get the players with the highest P vs T winrates\n" +
-        "7: Get teams founded before 2011 that are still active");
+        "7: Get teams founded before 2011 that are still active\n");
   }
 }
 
@@ -196,6 +206,30 @@ class SportDatabase implements Closeable {
           rs.getString("tag"),
           rs.getString("nationality"));
     }
+  }
+
+  void query2(int playerId, int teamId) throws SQLException {
+    int rowsUpdated = stmt.executeUpdate(
+        "UPDATE members\n" +
+            "SET end_date = NOW()\n" +
+            "where player = " + playerId + "\n" +
+            "  AND team != " + teamId + "\n" +
+            "  AND end_date IS NULL");
+    int rowsInserted = stmt.executeUpdate(
+        "INSERT INTO members\n" +
+            "SELECT " + playerId + ", " + teamId + ", CURRENT_DATE(), NULL\n" +
+            "FROM members\n" +
+            "WHERE NOT EXISTS(SELECT *\n" +
+            "                 FROM members\n" +
+            "                 WHERE player = " + playerId + "\n" +
+            "                   AND TEAM = " + teamId + "\n" +
+            "                   AND end_date IS NULL)\n" +
+            "LIMIT 1");
+    if (rowsUpdated > 0)
+      System.out.println("Departed player from old team.");
+    System.out.println(rowsInserted > 0
+        ? "Added player to new team."
+        : "Player already on team.");
   }
 
   @Override
