@@ -44,7 +44,7 @@ GROUP BY tag
 HAVING COUNT(*) = 3;
 
 -- 5 (good)
-SELECT tag, real_name, MAX(end_date)
+SELECT tag, real_name, MAX(end_date) as depature
 FROM members
          INNER JOIN teams t on members.team = t.team_id
          INNER JOIN players p on members.player = p.player_id
@@ -74,9 +74,9 @@ ORDER BY winrate DESC;
 -- 7 (good)
 SELECT name,
        founded,
-       SUM(CASE WHEN game_race = 'P' THEN 1 ELSE 0 END) as Protoss,
-       SUM(CASE WHEN game_race = 'T' THEN 1 ELSE 0 END) as Terran,
-       SUM(CASE WHEN game_race = 'Z' THEN 1 ELSE 0 END) as Zerg
+       SUM(CASE WHEN game_race = 'P' THEN 1 ELSE 0 END) as protoss,
+       SUM(CASE WHEN game_race = 'T' THEN 1 ELSE 0 END) as terran,
+       SUM(CASE WHEN game_race = 'Z' THEN 1 ELSE 0 END) as zerg
 FROM teams
          INNER JOIN members m on teams.team_id = m.team
          INNER JOIN players p on m.player = p.player_id

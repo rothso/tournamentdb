@@ -57,12 +57,16 @@ public class n01128755_Assign4 {
           db.query3(nationality, birthYear);
           break;
         case 4:
+          db.query4();
           break;
         case 5:
+          db.query5();
           break;
         case 6:
+          db.query6();
           break;
         case 7:
+          db.query7();
           break;
         default:
           System.out.println("Invalid option, please try again.");
@@ -250,6 +254,110 @@ class SportDatabase implements Closeable {
       System.out.printf("%-3d %-20s %-20s\n", i++,
           rs.getString("real_name"),
           rs.getString("birthday"));
+    }
+  }
+
+  void query4() throws SQLException {
+    ResultSet rs = stmt.executeQuery(
+        "SELECT tag, game_race\n" +
+            "FROM (\n" +
+            "         SELECT *\n" +
+            "         FROM players\n" +
+            "                  INNER JOIN earnings e ON players.player_id = e.player\n" +
+            "                  INNER JOIN tournaments t ON e.tournament = t.tournament_id\n" +
+            "         WHERE major = TRUE\n" +
+            "           AND position = 1\n" +
+            "           AND region IS NOT NULL\n" +
+            "         GROUP BY tag, region) as t1\n" +
+            "GROUP BY tag\n" +
+            "HAVING COUNT(*) = 3"
+    );
+    int i = 1;
+    System.out.printf("    %-20s %-20s\n", "Tag", "Game Race");
+    while (rs.next()) {
+      System.out.printf("%-3d %-20s %-20s\n", i++,
+          rs.getString("tag"),
+          rs.getString("game_race"));
+    }
+  }
+
+  void query5() throws SQLException {
+    ResultSet rs = stmt.executeQuery(
+        "SELECT tag, real_name, MAX(end_date) as departure\n" +
+            "FROM members\n" +
+            "         INNER JOIN teams t on members.team = t.team_id\n" +
+            "         INNER JOIN players p on members.player = p.player_id\n" +
+            "WHERE name = 'Root Gaming'\n" +
+            "  AND player NOT IN (\n" +
+            "    SELECT player\n" +
+            "    FROM members\n" +
+            "             INNER JOIN teams t on members.team = t.team_id\n" +
+            "    WHERE name = 'Root Gaming'\n" +
+            "      AND end_date is NULL)\n" +
+            "GROUP BY player"
+    );
+    int i = 1;
+    System.out.printf("    %-20s %-20s %-20s\n", "Tag", "Real Name", "Most Recent Departure");
+    while (rs.next()) {
+      System.out.printf("%-3d %-20s %-20s %-20s\n", i++,
+          rs.getString("tag"),
+          rs.getString("real_name"),
+          rs.getString("departure"));
+    }
+  }
+
+  void query6() throws SQLException {
+    ResultSet rs = stmt.executeQuery(
+        "SELECT p1.tag, p1.nationality, SUM(IF(scoreA > scoreB, 1, 0)) / COUNT(*) * 100 as " +
+            "winrate\n" +
+            "FROM (SELECT playerA, playerB, scoreA, scoreB\n" +
+            "      FROM matches\n" +
+            "      UNION ALL\n" +
+            "      SELECT playerB, playerA, scoreB, scoreA\n" +
+            "      FROM matches) m\n" +
+            "         INNER JOIN players p1 ON m.playerA = p1.player_id AND p1.game_race = 'P'\n" +
+            "         INNER JOIN players p2 ON m.playerB = p2.player_id AND p2.game_race = 'T'\n" +
+            "GROUP BY playerA\n" +
+            "HAVING COUNT(*) >= 10\n" +
+            "   AND winrate > 65\n" +
+            "ORDER BY winrate DESC"
+    );
+    int i = 1;
+    System.out.printf("    %-20s %-20s %-20s\n", "Tag", "Nationality", "P vs. T Win Rate");
+    while (rs.next()) {
+      System.out.printf("%-3d %-20s %-20s %-20s\n", i++,
+          rs.getString("tag"),
+          rs.getString("nationality"),
+          rs.getString("winrate"));
+    }
+  }
+
+  void query7() throws SQLException {
+    ResultSet rs = stmt.executeQuery(
+        "SELECT name,\n" +
+            "       founded,\n" +
+            "       SUM(CASE WHEN game_race = 'P' THEN 1 ELSE 0 END) as protoss,\n" +
+            "       SUM(CASE WHEN game_race = 'T' THEN 1 ELSE 0 END) as terran,\n" +
+            "       SUM(CASE WHEN game_race = 'Z' THEN 1 ELSE 0 END) as zerg\n" +
+            "FROM teams\n" +
+            "         INNER JOIN members m on teams.team_id = m.team\n" +
+            "         INNER JOIN players p on m.player = p.player_id\n" +
+            "WHERE YEAR(founded) < 2011\n" +
+            "  AND disbanded IS NULL\n" +
+            "  AND end_date IS NULL\n" +
+            "GROUP BY name\n" +
+            "ORDER BY name"
+    );
+    int i = 1;
+    System.out.printf("    %-20s %-20s %-20s %-20s %-20s\n",
+        "Name", "Founded", "# Protoss", "# Terran", "# Zerg");
+    while (rs.next()) {
+      System.out.printf("%-3d %-20s %-20s %-20s %-20s %-20s\n", i++,
+          rs.getString("name"),
+          rs.getString("founded"),
+          rs.getString("protoss"),
+          rs.getString("terran"),
+          rs.getString("zerg"));
     }
   }
 
