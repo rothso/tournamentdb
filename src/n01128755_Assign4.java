@@ -33,6 +33,7 @@ public class n01128755_Assign4 {
     Scanner input = new Scanner(System.in);
     showMenu();
     while ((option = input.nextInt()) != 0) {
+      input.nextLine();
       switch (option) {
         case 1:
           System.out.print("Enter the birth year: ");
@@ -49,6 +50,11 @@ public class n01128755_Assign4 {
           db.query2(player, team);
           break;
         case 3:
+          System.out.print("Enter the nationality: ");
+          String nationality = input.nextLine();
+          System.out.print("Enter the birth year: ");
+          int birthYear = input.nextInt();
+          db.query3(nationality, birthYear);
           break;
         case 4:
           break;
@@ -230,6 +236,21 @@ class SportDatabase implements Closeable {
     System.out.println(rowsInserted > 0
         ? "Added player to new team."
         : "Player already on team.");
+  }
+
+  void query3(String nationality, int birthYear) throws SQLException {
+    ResultSet rs = stmt.executeQuery(
+        "SELECT real_name, birthday\n" +
+            "FROM players\n" +
+            "WHERE nationality = '" + nationality + "'\n" +
+            "  AND YEAR(birthday) = " + birthYear);
+    int i = 1;
+    System.out.printf("    %-20s %-20s\n", "Real Name", "Birthday");
+    while (rs.next()) {
+      System.out.printf("%-3d %-20s %-20s\n", i++,
+          rs.getString("real_name"),
+          rs.getString("birthday"));
+    }
   }
 
   @Override
