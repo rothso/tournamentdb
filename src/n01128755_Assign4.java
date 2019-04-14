@@ -79,6 +79,12 @@ public class n01128755_Assign4 {
       }
       showMenu();
     }
+
+    // Print an exit message
+    System.out.println("Goodbye!");
+
+    // Drop the database
+    db.close();
   }
 
   private static void showMenu() {
@@ -207,7 +213,7 @@ class SportDatabase implements Closeable {
     insert.close();
     conn.setAutoCommit(true);
 
-    System.out.println("Inserted table " + table + " from " + fileName + ".");
+    System.out.println("Inserted table " + table + " from " + fileName);
   }
 
   void query1(int birthYear, int birthMonth) throws SQLException {
