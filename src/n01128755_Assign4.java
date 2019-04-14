@@ -1,11 +1,13 @@
 import java.io.Closeable;
 import java.io.File;
 import java.io.IOException;
+import java.sql.BatchUpdateException;
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.sql.Statement;
 import java.util.Collections;
 import java.util.Scanner;
@@ -21,12 +23,16 @@ public class n01128755_Assign4 {
 
     // Insert data into the database
     db.createSchema();
-    db.insert("players", "players.csv");
-    db.insert("teams", "teams.csv");
-    db.insert("members", "members.csv");
-    db.insert("tournaments", "tournaments.csv");
-    db.insert("matches", "matches_v2.csv");
-    db.insert("earnings", "earnings.csv");
+    try {
+      db.insert("players", "players.csv");
+      db.insert("teams", "teams.csv");
+      db.insert("members", "members.csv");
+      db.insert("tournaments", "tournaments.csv");
+      db.insert("matches", "matches_v2.csv");
+      db.insert("earnings", "earnings.csv");
+    } catch (BatchUpdateException e) {
+      // Data is already inserted, silently ignore...
+    }
 
     // Query the database
     int option;
@@ -200,6 +206,8 @@ class SportDatabase implements Closeable {
     // Clean up
     insert.close();
     conn.setAutoCommit(true);
+
+    System.out.println("Inserted table " + table + " from " + fileName + ".");
   }
 
   void query1(int birthYear, int birthMonth) throws SQLException {
@@ -208,13 +216,17 @@ class SportDatabase implements Closeable {
             "FROM players\n" +
             "WHERE YEAR(birthday) = " + birthYear + "\n" +
             "  AND MONTH(birthday) = " + birthMonth);
-    int i = 1;
-    System.out.printf("    %-20s %-20s %-20s\n", "Real Name", "Tag", "Nationality");
-    while (rs.next()) {
-      System.out.printf("%-3d %-20s %-20s %-20s\n", i++,
-          rs.getString("real_name"),
-          rs.getString("tag"),
-          rs.getString("nationality"));
+    if (rs.next()) {
+      int i = 1;
+      System.out.printf("    %-20s %-20s %-20s\n", "Real Name", "Tag", "Nationality");
+      do {
+        System.out.printf("%-3d %-20s %-20s %-20s\n", i++,
+            rs.getString("real_name"),
+            rs.getString("tag"),
+            rs.getString("nationality"));
+      } while (rs.next());
+    } else {
+      System.out.println("No results found.");
     }
   }
 
@@ -225,21 +237,26 @@ class SportDatabase implements Closeable {
             "where player = " + playerId + "\n" +
             "  AND team != " + teamId + "\n" +
             "  AND end_date IS NULL");
-    int rowsInserted = stmt.executeUpdate(
-        "INSERT INTO members\n" +
-            "SELECT " + playerId + ", " + teamId + ", CURRENT_DATE(), NULL\n" +
-            "FROM members\n" +
-            "WHERE NOT EXISTS(SELECT *\n" +
-            "                 FROM members\n" +
-            "                 WHERE player = " + playerId + "\n" +
-            "                   AND TEAM = " + teamId + "\n" +
-            "                   AND end_date IS NULL)\n" +
-            "LIMIT 1");
-    if (rowsUpdated > 0)
-      System.out.println("Departed player from old team.");
-    System.out.println(rowsInserted > 0
-        ? "Added player to new team."
-        : "Player already on team.");
+    try {
+      int rowsInserted = stmt.executeUpdate(
+          "INSERT INTO members\n" +
+              "SELECT " + playerId + ", " + teamId + ", CURRENT_DATE(), NULL\n" +
+              "FROM members\n" +
+              "WHERE NOT EXISTS(SELECT *\n" +
+              "                 FROM members\n" +
+              "                 WHERE player = " + playerId + "\n" +
+              "                   AND TEAM = " + teamId + "\n" +
+              "                   AND end_date IS NULL)\n" +
+              "LIMIT 1");
+      if (rowsUpdated > 0)
+        System.out.println("Departed player from old team.");
+      System.out.println(rowsInserted > 0
+          ? "Added player to new team."
+          : "Player already on team.");
+    } catch (SQLIntegrityConstraintViolationException e) {
+      // Either the player ID or team ID does not exist
+      System.out.println("Unable to assign player to team (player or team does not exist).");
+    }
   }
 
   void query3(String nationality, int birthYear) throws SQLException {
@@ -248,12 +265,16 @@ class SportDatabase implements Closeable {
             "FROM players\n" +
             "WHERE nationality = '" + nationality + "'\n" +
             "  AND YEAR(birthday) = " + birthYear);
-    int i = 1;
-    System.out.printf("    %-20s %-20s\n", "Real Name", "Birthday");
-    while (rs.next()) {
-      System.out.printf("%-3d %-20s %-20s\n", i++,
-          rs.getString("real_name"),
-          rs.getString("birthday"));
+    if (rs.next()) {
+      int i = 1;
+      System.out.printf("    %-20s %-20s\n", "Real Name", "Birthday");
+      do {
+        System.out.printf("%-3d %-20s %-20s\n", i++,
+            rs.getString("real_name"),
+            rs.getString("birthday"));
+      } while (rs.next());
+    } else {
+      System.out.println("No results found.");
     }
   }
 
